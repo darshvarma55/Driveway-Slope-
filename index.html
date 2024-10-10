@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driveway Slope & Compliance Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            text-align: center;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+        .result, .alert {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .alert {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .alternative-section {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Driveway Slope & Compliance Calculator</h1>
+
+        <label for="sidewalkWidth">Enter Sidewalk Width (ft):</label>
+        <input type="number" id="sidewalkWidth" placeholder="Width in feet">
+
+        <label for="drivewayWidth">Enter Driveway Width (ft):</label>
+        <input type="number" id="drivewayWidth" placeholder="Width in feet">
+
+        <label for="bwToFl">Enter BW to FL Elevation Difference:</label>
+        <input type="number" id="bwToFl" placeholder="Elevation difference">
+        <select id="bwToFlUnits">
+            <option value="feet">Feet</option>
+            <option value="inches">Inches</option>
+        </select>
+
+        <label for="bwToFw">Enter BW to FW Elevation Difference (optional):</label>
+        <input type="number" id="bwToFw" placeholder="Elevation difference (optional)">
+        <select id="bwToFwUnits">
+            <option value="feet">Feet</option>
+            <option value="inches">Inches</option>
+        </select>
+
+        <label for="fwToFl">Enter FW to FL Elevation Difference (optional):</label>
+        <input type="number" id="fwToFl" placeholder="Elevation difference (optional)">
+        <select id="fwToFlUnits">
+            <option value="feet">Feet</option>
+            <option value="inches">Inches</option>
+        </select>
+
+        <label for="streetSlope">Enter 7' Street Shot Elevation Difference:</label>
+        <input type="number" id="streetSlope" placeholder="Street elevation difference">
+        <select id="streetSlopeUnits">
+            <option value="feet">Feet</option>
+            <option value="inches">Inches</option>
+        </select>
+
+        <button class="btn" onclick="calculateSlope()">Calculate Driveway Slope</button>
+
+        <div class="result" id="drivewayResult">Result will be displayed here...</div>
+        <div class="alert" id="alert" style="display: none;">Warning will be displayed here...</div>
+
+        <!-- Alternative Solutions -->
+        <div class="alternative-section" id="alternativeSection">
+            <h2>Alternative Solutions</h2>
+            <div class="result" id="alternativeResult"></div>
+
+            <h3>Private Garage Apron</h3>
+            <label for="garageApronWidth">Enter Garage Apron Width (ft):</label>
+            <input type="number" id="garageApronWidth" placeholder="Width in feet">
+
+            <label for="garageElevation">Enter Garage Floor to BW Elevation Difference (ft):</label>
+            <input type="number" id="garageElevation" placeholder="Elevation difference in feet">
+
+            <button class="btn" onclick="calculateGarageApron()">Check with Garage Apron</button>
+
+            <div class="result" id="garageResult">Garage apron result will be displayed here...</div>
+        </div>
+    </div>
+
+    <script>
+        function convertToFeet(value, unit) {
+            if (unit === 'inches') {
+                return value / 12; // Convert inches to feet
+            }
+            return value; // Already in feet
+        }
+
+        function calculateSlope() {
+            const sidewalkWidth = parseFloat(document.getElementById('sidewalkWidth').value);
+            const drivewayWidth = parseFloat(document.getElementById('drivewayWidth').value);
+
+            const bwToFl = parseFloat(document.getElementById('bwToFl').value);
+            const bwToFlUnits = document.getElementById('bwToFlUnits').value;
+            const bwToFw = parseFloat(document.getElementById('bwToFw').value) || 0;
+            const bwToFwUnits = document.getElementById('bwToFwUnits').value;
+            const fwToFl = parseFloat(document.getElementById('fwToFl').value) || 0;
+            const fwToFlUnits = document.getElementById('fwToFlUnits').value;
+
+            const streetSlope = parseFloat(document.getElementById('streetSlope').value);
+            const streetSlopeUnits = document.getElementById('streetSlopeUnits').value;
+
+            const curbHeight = 0.875 / 12; // Fixed curb height in feet (0.875 inches)
+
+            if (isNaN(sidewalkWidth) || isNaN(drivewayWidth) || isNaN(bwToFl) || isNaN(streetSlope)) {
+                document.getElementById('drivewayResult').innerText = 'Please enter valid values for all fields.';
+                return;
+            }
+
+            // Convert all elevation differences to feet
+            const bwToFlFeet = convertToFeet(bwToFl, bwToFlUnits);
+            const bwToFwFeet = convertToFeet(bwToFw, bwToFwUnits);
+            const fwToFlFeet = convertToFeet(fwToFl, fwToFlUnits);
+            const streetSlopeFeet = convertToFeet(streetSlope, streetSlopeUnits);
+
+            // Calculate sidewalk height difference with 2% slope
+            const sidewalkHeightDifference = 0.02 * sidewalkWidth;
+
+            // Total elevation difference from BW to FL or via BW to FW and FW to FL
+            const totalElevationDifference = bwToFwFeet && fwToFlFeet
+                ? bwToFwFeet + fwToFlFeet
+                : bwToFlFeet;
+
+            // Adjust total elevation for the curb height
+            const adjustedTotalElevation = totalElevationDifference + curbHeight;
+
+            // Driveway slope calculation
+            const drivewaySlope = ((adjustedTotalElevation - sidewalkHeightDifference) / drivewayWidth) * 100;
+
+            // 7' street slope calculation
+            const streetSlopePercentage = (streetSlopeFeet / 7) * 100;
+
+            // Differential slope
+            const differentialSlope = drivewaySlope + streetSlopePercentage;
+
+            let resultText = `Driveway apron slope: ${
